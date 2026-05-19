@@ -115,6 +115,26 @@ public class GlobalExceptionHandler {
     }
 
     // ==========================================
+    // Runtime Exceptions
+    // ==========================================
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(
+            RuntimeException ex) {
+
+        Map<String, Object> errorResponse = new HashMap<>();
+
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", 400);
+        errorResponse.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    // ==========================================
     // Generic Exception Handler
     // ==========================================
 

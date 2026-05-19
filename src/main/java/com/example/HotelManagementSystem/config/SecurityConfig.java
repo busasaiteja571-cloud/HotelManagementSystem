@@ -67,7 +67,7 @@ public class SecurityConfig {
                             "/api/user/**"
                     )
                     .hasAnyRole(
-                            "USER",
+                            "CUSTOMER",
                             "ADMIN"
                     )
 

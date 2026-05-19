@@ -82,7 +82,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
+    private Role role = Role.CUSTOMER;
 
     // =========================
     // Email Verified

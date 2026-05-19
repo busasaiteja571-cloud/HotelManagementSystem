@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.HotelManagementSystem.dto.UserRegistrationRequest;
+import com.example.HotelManagementSystem.dto.UserResponse;
 import com.example.HotelManagementSystem.entity.LoginRequest;
 import com.example.HotelManagementSystem.entity.OTPRequest;
 import com.example.HotelManagementSystem.entity.OTPVerificationRequest;
-import com.example.HotelManagementSystem.entity.User;
 import com.example.HotelManagementSystem.service.OTPService;
 import com.example.HotelManagementSystem.service.UserService;
 
@@ -48,13 +49,15 @@ public class AuthController {
     // =========================
 
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(
-            @Valid @RequestBody User user) {
+    public ResponseEntity<UserResponse> registerUser(
+            @Valid @RequestBody UserRegistrationRequest request) {
 
-        User savedUser = userService.createUser(user);
+        UserResponse response = UserResponse.fromUser(
+                userService.createUser(request)
+        );
 
         return new ResponseEntity<>(
-                savedUser,
+                response,
                 HttpStatus.CREATED);
     }
 

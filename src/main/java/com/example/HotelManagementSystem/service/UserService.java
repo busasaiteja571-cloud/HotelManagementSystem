@@ -5,6 +5,9 @@ import java.util.List;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.HotelManagementSystem.dto.UserCreateRequest;
+import com.example.HotelManagementSystem.dto.UserRegistrationRequest;
+import com.example.HotelManagementSystem.entity.Role;
 import com.example.HotelManagementSystem.entity.User;
 import com.example.HotelManagementSystem.repository.UserRepository;
 import com.example.HotelManagementSystem.security.JwtUtil;
@@ -59,7 +62,62 @@ public class UserService {
     // CREATE USER
     // =========================
 
+    public User createUser(UserRegistrationRequest request) {
+        return saveNewUser(
+                toUser(request),
+                Role.CUSTOMER
+        );
+    }
+
+    public User createStaff(UserCreateRequest request) {
+        return saveNewUser(
+                toUser(request),
+                Role.STAFF
+        );
+    }
+
+    public User createAdmin(UserCreateRequest request) {
+        return saveNewUser(
+                toUser(request),
+                Role.ADMIN
+        );
+    }
+
     public User createUser(User user) {
+        return saveNewUser(user, Role.CUSTOMER);
+    }
+
+    public User createStaff(User user) {
+        return saveNewUser(user, Role.STAFF);
+    }
+
+    public User createAdmin(User user) {
+        return saveNewUser(user, Role.ADMIN);
+    }
+
+    public List<User> getUsersByRole(Role role) {
+        return userRepository.findByRole(role);
+    }
+
+    private User toUser(UserRegistrationRequest request) {
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
+        user.setPhone(request.getPhone());
+        return user;
+    }
+
+    private User toUser(UserCreateRequest request) {
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
+        user.setPhone(request.getPhone());
+        return user;
+    }
+
+    private User saveNewUser(User user, Role role) {
 
         // Check Username Already Exists
         userRepository.findByUsername(
@@ -81,10 +139,12 @@ public class UserService {
 
         // Encrypt Password
         user.setPassword(
-
                 passwordEncoder.encode(
                         user.getPassword())
         );
+
+        // Force role assignment based on the operation
+        user.setRole(role);
 
         return userRepository.save(user);
     }

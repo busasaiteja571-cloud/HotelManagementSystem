@@ -13,71 +13,71 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.HotelManagementSystem.dto.UserCreateRequest;
 import com.example.HotelManagementSystem.dto.UserResponse;
+import com.example.HotelManagementSystem.entity.Role;
 import com.example.HotelManagementSystem.entity.User;
 import com.example.HotelManagementSystem.service.UserService;
 
 @RestController
-@RequestMapping("/api/admin/users")
-public class AdminUserController {
-
-    // =========================
-    // Service Injection
-    // =========================
+@RequestMapping("/api/admin/staff")
+public class AdminStaffController {
 
     private final UserService userService;
 
-    public AdminUserController(
-            UserService userService) {
-
+    public AdminStaffController(UserService userService) {
         this.userService = userService;
     }
 
     // =========================
-    // GET ALL USERS
+    // GET ALL STAFF
     // =========================
 
     @GetMapping
-    public List<UserResponse> getAllUsers() {
-
-        return userService.getAllUsers()
+    public List<UserResponse> getAllStaff() {
+        return userService.getUsersByRole(Role.STAFF)
                 .stream()
                 .map(UserResponse::fromUser)
                 .toList();
     }
 
     // =========================
-    // GET USER BY ID
+    // GET STAFF BY ID
     // =========================
 
     @GetMapping("/{id}")
-    public UserResponse getUserById(
-            @PathVariable Long id) {
+    public UserResponse getStaffById(@PathVariable Long id) {
+        User user = userService.getUserById(id);
 
-        return UserResponse.fromUser(
-                userService.getUserById(id)
-        );
+        if (user.getRole() != Role.STAFF) {
+            throw new RuntimeException("Staff member not found");
+        }
+
+        return UserResponse.fromUser(user);
     }
 
     // =========================
-    // CREATE ADMIN
+    // CREATE STAFF
     // =========================
 
-    @PostMapping("/admin")
-    public UserResponse createAdmin(
+    @PostMapping
+    public UserResponse createStaff(
             @Valid @RequestBody UserCreateRequest request) {
 
         return UserResponse.fromUser(
-                userService.createAdmin(request)
+                userService.createStaff(request)
         );
     }
 
     // =========================
-    // DELETE USER
+    // DELETE STAFF
     // =========================
 
     @DeleteMapping("/{id}")
-    public void deleteUser(
-            @PathVariable Long id) {
+    public void deleteStaff(@PathVariable Long id) {
+        User staff = userService.getUserById(id);
+
+        if (staff.getRole() != Role.STAFF) {
+            throw new RuntimeException("User is not staff");
+        }
 
         userService.deleteUser(id);
     }
