@@ -10,6 +10,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,46 +29,88 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // =========================
+    // Username
+    // =========================
+
     @NotBlank(message = "Username is required")
     @Column(nullable = false, unique = true)
     private String username;
+
+    // =========================
+    // Email
+    // =========================
 
     @Email(message = "Invalid email format")
     @NotBlank(message = "Email is required")
     @Column(nullable = false, unique = true)
     private String email;
 
+    // =========================
+    // Password
+    // =========================
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+
     @NotBlank(message = "Password is required")
+
+    @Pattern(
+        regexp = "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@#$%^&+=!]).{8,}$",
+        message = "Password must contain uppercase, lowercase, number, special character and minimum 8 characters"
+    )
+
     @Column(nullable = false)
     private String password;
 
+    // =========================
+    // Phone Number
+    // =========================
+
     @NotBlank(message = "Phone number is required")
+
     @Pattern(
         regexp = "^[0-9]{10}$",
         message = "Phone number must be 10 digits"
     )
+
     @Column(nullable = false)
     private String phone;
+
+    // =========================
+    // Role
+    // =========================
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
 
+    // =========================
+    // Created At
+    // =========================
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // One user can have many bookings
-    @OneToMany(mappedBy = "user")
+    // =========================
+    // Relationships
+    // =========================
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<Booking> bookings;
+
+    // =========================
+    // Auto Timestamp
+    // =========================
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 
+    // =========================
     // Getters and Setters
+    // =========================
 
     public Long getId() {
         return id;

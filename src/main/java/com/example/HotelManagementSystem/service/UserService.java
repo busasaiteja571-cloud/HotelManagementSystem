@@ -7,124 +7,183 @@ import org.springframework.stereotype.Service;
 
 import com.example.HotelManagementSystem.entity.User;
 import com.example.HotelManagementSystem.repository.UserRepository;
+import com.example.HotelManagementSystem.security.JwtUtil;
 
 @Service
 public class UserService {
 
-	// Repository Injection
+    // =========================
+    // Repository Injection
+    // =========================
 
     private final UserRepository userRepository;
 
-   
+    // =========================
+    // JWT UTIL
+    // =========================
+
+    private final JwtUtil jwtUtil;
+
+    // =========================
     // BCrypt Password Encoder
-  
+    // =========================
 
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository) {
+    // =========================
+    // Constructor Injection
+    // =========================
+
+    public UserService(
+            UserRepository userRepository,
+            JwtUtil jwtUtil) {
 
         this.userRepository = userRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+
+        this.jwtUtil = jwtUtil;
+
+        this.passwordEncoder =
+                new BCryptPasswordEncoder();
     }
 
-    
+    // =========================
     // CREATE USER
-  
+    // =========================
 
     public User createUser(User user) {
 
         // Check Username Already Exists
-        userRepository.findByUsername(user.getUsername())
+        userRepository.findByUsername(
+                user.getUsername())
                 .ifPresent(existingUser -> {
-                    throw new RuntimeException("Username already exists");
+
+                    throw new RuntimeException(
+                            "Username already exists");
                 });
 
         // Check Email Already Exists
-        userRepository.findByEmail(user.getEmail())
+        userRepository.findByEmail(
+                user.getEmail())
                 .ifPresent(existingUser -> {
-                    throw new RuntimeException("Email already exists");
+
+                    throw new RuntimeException(
+                            "Email already exists");
                 });
 
         // Encrypt Password
         user.setPassword(
-                passwordEncoder.encode(user.getPassword()));
+
+                passwordEncoder.encode(
+                        user.getPassword())
+        );
 
         return userRepository.save(user);
     }
 
- 
+    // =========================
     // GET ALL USERS
- 
+    // =========================
 
     public List<User> getAllUsers() {
 
         return userRepository.findAll();
     }
 
-
+    // =========================
     // GET USER BY ID
-    
+    // =========================
+
     public User getUserById(Long id) {
 
         return userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+
+                        new RuntimeException(
+                                "User not found"));
     }
 
-  
+    // =========================
     // UPDATE USER
- 
+    // =========================
 
-    public User updateUser(Long id, User user) {
+    public User updateUser(
+            Long id,
+            User user) {
 
-        User existingUser = getUserById(id);
+        User existingUser =
+                getUserById(id);
 
-        existingUser.setUsername(user.getUsername());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setPhone(user.getPhone());
-        existingUser.setRole(user.getRole());
+        existingUser.setUsername(
+                user.getUsername());
+
+        existingUser.setEmail(
+                user.getEmail());
+
+        existingUser.setPhone(
+                user.getPhone());
+
+        existingUser.setRole(
+                user.getRole());
 
         // Update Password Only If Provided
         if (user.getPassword() != null &&
                 !user.getPassword().isBlank()) {
 
             existingUser.setPassword(
-                    passwordEncoder.encode(user.getPassword()));
+
+                    passwordEncoder.encode(
+                            user.getPassword())
+            );
         }
 
-        return userRepository.save(existingUser);
+        return userRepository.save(
+                existingUser);
     }
 
-  
+    // =========================
     // DELETE USER
-
+    // =========================
 
     public void deleteUser(Long id) {
 
-        User user = getUserById(id);
+        User user =
+                getUserById(id);
 
         userRepository.delete(user);
     }
 
-   
+    // =========================
     // LOGIN USER
-  
+    // =========================
 
-    public User loginUser(String username, String password) {
+    public String loginUser(
+            String username,
+            String password) {
 
-        User user = userRepository.findByUsername(username)
+        User user =
+                userRepository.findByUsername(
+                        username)
+
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid username"));
+
+                        new RuntimeException(
+                                "Invalid username"));
 
         // Compare Encrypted Password
         boolean isPasswordMatch =
-                passwordEncoder.matches(password,
+
+                passwordEncoder.matches(
+                        password,
                         user.getPassword());
 
         if (!isPasswordMatch) {
-            throw new RuntimeException("Invalid password");
+
+            throw new RuntimeException(
+                    "Invalid password");
         }
 
-        return user;
+        // Generate JWT Token
+        return jwtUtil.generateToken(
+                user.getUsername());
     }
 }

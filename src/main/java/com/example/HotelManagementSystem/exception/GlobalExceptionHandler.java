@@ -1,54 +1,136 @@
 package com.example.HotelManagementSystem.exception;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@ControllerAdvice
+import jakarta.validation.ConstraintViolationException;
 
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
- 
+    // ==========================================
+    // Request Body Validation Errors
+    // ==========================================
 
-@ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationErrors(
+            MethodArgumentNotValidException ex) {
 
-public ResponseEntity<Map<String,String>> handleValidationErrors(
+        Map<String, Object> errorResponse = new HashMap<>();
 
-MethodArgumentNotValidException ex){
+        Map<String, String> validationErrors = new HashMap<>();
 
- 
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+            validationErrors.put(
+                error.getField(),
+                error.getDefaultMessage()
+            )
+        );
 
-Map<String,String> errors = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", 400);
+        errorResponse.put("errors", validationErrors);
 
- 
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.BAD_REQUEST
+        );
+    }
 
-ex.getBindingResult().getFieldErrors().forEach(error ->
+    // ==========================================
+    // JPA / Hibernate Validation Errors
+    // ==========================================
 
-errors.put(error.getField(), error.getDefaultMessage())
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolationException(
+            ConstraintViolationException ex) {
 
-);
+        Map<String, Object> errorResponse = new HashMap<>();
 
- 
+        List<String> errors = ex.getConstraintViolations()
+                .stream()
+                .map(v -> v.getMessage())
+                .toList();
 
-return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", 400);
+        errorResponse.put("errors", errors);
 
-}
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.BAD_REQUEST
+        );
+    }
 
- 
+    // ==========================================
+    // JSON Parse Errors / Enum Errors
+    // ==========================================
 
-@ExceptionHandler(Exception.class)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleJsonErrors(
+            HttpMessageNotReadableException ex) {
 
-public ResponseEntity<String> handleGeneralException(Exception ex){
+        Map<String, Object> errorResponse = new HashMap<>();
 
-return new ResponseEntity<>("Internal Server Error", HttpStatus.INTERNAL_SERVER_ERROR);
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", 400);
+        errorResponse.put(
+                "message",
+                "Invalid request body or enum value"
+        );
 
-}
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.BAD_REQUEST
+        );
+    }
 
- 
+    // ==========================================
+    // Illegal Argument Errors
+    // ==========================================
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+            IllegalArgumentException ex) {
+
+        Map<String, Object> errorResponse = new HashMap<>();
+
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", 400);
+        errorResponse.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    // ==========================================
+    // Generic Exception Handler
+    // ==========================================
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGenericException(
+            Exception ex) {
+
+        Map<String, Object> errorResponse = new HashMap<>();
+
+        errorResponse.put("timestamp", LocalDateTime.now());
+        errorResponse.put("status", 500);
+        errorResponse.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(
+                errorResponse,
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
 }

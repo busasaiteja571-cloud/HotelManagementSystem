@@ -1,24 +1,38 @@
 package com.example.HotelManagementSystem.security;
 
-import org.springframework.stereotype.Component;
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
-
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
+import org.springframework.stereotype.Component;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtil {
 
-    private final String SECRET = 
-            "hospitalsecretkeyhospitalsecretkey123";
+    // =========================
+    // SECRET KEY
+    // =========================
+
+    private static final String SECRET =
+            "hospitalsecretkeyhospitalsecretkey123456789";
+
+    // =========================
+    // KEY
+    // =========================
 
     private final Key key =
-            Keys.hmacShaKeyFor(SECRET.getBytes());
+            Keys.hmacShaKeyFor(
+                    SECRET.getBytes(StandardCharsets.UTF_8)
+            );
 
+    // =========================
     // GENERATE TOKEN
+    // =========================
 
     public String generateToken(String username) {
 
@@ -35,14 +49,16 @@ public class JwtUtil {
                         )
                 )
 
-                .signWith(key)
+                .signWith(key, SignatureAlgorithm.HS256)
 
                 .compact();
     }
 
-    // EXTRACT USERNAME
+    // =========================
+    // EXTRACT ALL CLAIMS
+    // =========================
 
-    public String extractUsername(String token) {
+    private Claims extractAllClaims(String token) {
 
         return Jwts.parserBuilder()
 
@@ -52,8 +68,40 @@ public class JwtUtil {
 
                 .parseClaimsJws(token)
 
-                .getBody()
+                .getBody();
+    }
 
+    // =========================
+    // EXTRACT USERNAME
+    // =========================
+
+    public String extractUsername(String token) {
+
+        return extractAllClaims(token)
                 .getSubject();
+    }
+
+    // =========================
+    // CHECK TOKEN EXPIRATION
+    // =========================
+
+    public boolean isTokenExpired(String token) {
+
+        return extractAllClaims(token)
+                .getExpiration()
+                .before(new Date());
+    }
+
+    // =========================
+    // VALIDATE TOKEN
+    // =========================
+
+    public boolean validateToken(String token, String username) {
+
+        final String extractedUsername =
+                extractUsername(token);
+
+        return extractedUsername.equals(username)
+                && !isTokenExpired(token);
     }
 }
