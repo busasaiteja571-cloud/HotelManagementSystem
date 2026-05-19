@@ -25,6 +25,12 @@ public class UserService {
     private final JwtUtil jwtUtil;
 
     // =========================
+    // OTP Service
+    // =========================
+
+    private final OTPService otpService;
+
+    // =========================
     // BCrypt Password Encoder
     // =========================
 
@@ -36,11 +42,14 @@ public class UserService {
 
     public UserService(
             UserRepository userRepository,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil,
+            OTPService otpService) {
 
         this.userRepository = userRepository;
 
         this.jwtUtil = jwtUtil;
+
+        this.otpService = otpService;
 
         this.passwordEncoder =
                 new BCryptPasswordEncoder();
@@ -185,5 +194,48 @@ public class UserService {
         // Generate JWT Token
         return jwtUtil.generateToken(
                 user.getUsername());
+    }
+
+    // =========================
+    // VERIFY EMAIL WITH OTP
+    // =========================
+
+    public void verifyEmailWithOTP(
+            String email,
+            String otpCode) {
+
+        boolean isOTPValid =
+                otpService.verifyOTP(
+                        email,
+                        otpCode);
+
+        if (!isOTPValid) {
+
+            throw new RuntimeException(
+                    "Invalid or expired OTP");
+        }
+
+        User user =
+                userRepository.findByEmail(email)
+                .orElseThrow(() ->
+
+                        new RuntimeException(
+                                "User not found"));
+
+        user.setIsEmailVerified(true);
+        userRepository.save(user);
+    }
+
+    // =========================
+    // GET USER BY EMAIL
+    // =========================
+
+    public User getUserByEmail(String email) {
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() ->
+
+                        new RuntimeException(
+                                "User not found"));
     }
 }

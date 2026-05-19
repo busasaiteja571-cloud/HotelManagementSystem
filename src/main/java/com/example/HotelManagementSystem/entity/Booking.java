@@ -52,6 +52,28 @@ public class Booking {
     @Column(nullable = false)
     private Double totalPrice;
 
+    // =========================
+    // Discount Reference
+    // =========================
+
+    @ManyToOne
+    @JoinColumn(name = "discount_id")
+    private Discount discount;
+
+    // =========================
+    // Discount Amount Applied
+    // =========================
+
+    @Column(nullable = false)
+    private Double discountAmount = 0.0;
+
+    // =========================
+    // Final Price After Discount
+    // =========================
+
+    @Column(nullable = false)
+    private Double finalPrice;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BookingStatus bookingStatus;
@@ -112,6 +134,38 @@ public class Booking {
 
     public void setTotalPrice(Double totalPrice) {
         this.totalPrice = totalPrice;
+        // Auto-calculate finalPrice if not set
+        if (this.finalPrice == null || this.finalPrice == 0.0) {
+            this.finalPrice = totalPrice - this.discountAmount;
+        }
+    }
+
+    public Discount getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(Discount discount) {
+        this.discount = discount;
+    }
+
+    public Double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(Double discountAmount) {
+        this.discountAmount = discountAmount;
+        // Auto-calculate finalPrice
+        if (this.totalPrice != null) {
+            this.finalPrice = this.totalPrice - discountAmount;
+        }
+    }
+
+    public Double getFinalPrice() {
+        return finalPrice;
+    }
+
+    public void setFinalPrice(Double finalPrice) {
+        this.finalPrice = finalPrice;
     }
 
     public BookingStatus getBookingStatus() {

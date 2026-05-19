@@ -85,6 +85,13 @@ public class User {
     private Role role;
 
     // =========================
+    // Email Verified
+    // =========================
+
+    @Column(nullable = false)
+    private Boolean isEmailVerified = false;
+
+    // =========================
     // Created At
     // =========================
 
@@ -158,6 +165,14 @@ public class User {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public Boolean getIsEmailVerified() {
+        return isEmailVerified;
+    }
+
+    public void setIsEmailVerified(Boolean isEmailVerified) {
+        this.isEmailVerified = isEmailVerified;
     }
 
     public List<Booking> getBookings() {

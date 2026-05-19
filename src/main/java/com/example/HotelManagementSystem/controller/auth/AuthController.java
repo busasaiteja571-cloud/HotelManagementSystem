@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.HotelManagementSystem.entity.LoginRequest;
+import com.example.HotelManagementSystem.entity.OTPRequest;
+import com.example.HotelManagementSystem.entity.OTPVerificationRequest;
 import com.example.HotelManagementSystem.entity.User;
+import com.example.HotelManagementSystem.service.OTPService;
 import com.example.HotelManagementSystem.service.UserService;
 
 import jakarta.validation.Valid;
@@ -31,8 +34,13 @@ public class AuthController {
 
     private final UserService userService;
 
-    public AuthController(UserService userService) {
+    private final OTPService otpService;
+
+    public AuthController(
+            UserService userService,
+            OTPService otpService) {
         this.userService = userService;
+        this.otpService = otpService;
     }
 
     // =========================
@@ -74,6 +82,57 @@ public class AuthController {
                 "Login successful");
 
         response.put("token", token);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // =========================
+    // SEND OTP
+    // =========================
+
+    @PostMapping("/send-otp")
+    public ResponseEntity<Map<String, Object>> sendOTP(
+            @Valid @RequestBody OTPRequest request) {
+
+        otpService.generateAndSendOTP(
+                request.getEmail());
+
+        Map<String, Object> response =
+                new HashMap<>();
+
+        response.put("timestamp",
+                LocalDateTime.now());
+
+        response.put("status", 200);
+
+        response.put("message",
+                "OTP sent successfully to your email");
+
+        return ResponseEntity.ok(response);
+    }
+
+    // =========================
+    // VERIFY OTP
+    // =========================
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<Map<String, Object>> verifyOTP(
+            @Valid @RequestBody OTPVerificationRequest request) {
+
+        userService.verifyEmailWithOTP(
+                request.getEmail(),
+                request.getCode());
+
+        Map<String, Object> response =
+                new HashMap<>();
+
+        response.put("timestamp",
+                LocalDateTime.now());
+
+        response.put("status", 200);
+
+        response.put("message",
+                "Email verified successfully");
 
         return ResponseEntity.ok(response);
     }
