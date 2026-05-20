@@ -3,10 +3,12 @@ package com.example.HotelManagementSystem.controller.admin;
 import java.util.List;
 
 import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,7 +25,9 @@ public class AdminStaffController {
 
     private final UserService userService;
 
-    public AdminStaffController(UserService userService) {
+    public AdminStaffController(
+            UserService userService) {
+
         this.userService = userService;
     }
 
@@ -33,9 +37,14 @@ public class AdminStaffController {
 
     @GetMapping
     public List<UserResponse> getAllStaff() {
-        return userService.getUsersByRole(Role.STAFF)
+
+        return userService.getUsersByRole(
+                        Role.STAFF)
+
                 .stream()
+
                 .map(UserResponse::fromUser)
+
                 .toList();
     }
 
@@ -44,11 +53,16 @@ public class AdminStaffController {
     // =========================
 
     @GetMapping("/{id}")
-    public UserResponse getStaffById(@PathVariable Long id) {
-        User user = userService.getUserById(id);
+    public UserResponse getStaffById(
+            @PathVariable Long id) {
+
+        User user =
+                userService.getUserById(id);
 
         if (user.getRole() != Role.STAFF) {
-            throw new RuntimeException("Staff member not found");
+
+            throw new RuntimeException(
+                    "Staff member not found");
         }
 
         return UserResponse.fromUser(user);
@@ -60,11 +74,38 @@ public class AdminStaffController {
 
     @PostMapping
     public UserResponse createStaff(
-            @Valid @RequestBody UserCreateRequest request) {
+
+            @Valid
+            @RequestBody
+            UserCreateRequest request) {
 
         return UserResponse.fromUser(
+
                 userService.createStaff(request)
         );
+    }
+
+    // =========================
+    // UPDATE STAFF
+    // =========================
+
+    @PutMapping("/{id}")
+    public UserResponse updateStaff(
+
+            @PathVariable Long id,
+
+            @Valid
+            @RequestBody
+            UserCreateRequest request) {
+
+        User updatedStaff =
+
+                userService.updateStaff(
+                        id,
+                        request);
+
+        return UserResponse.fromUser(
+                updatedStaff);
     }
 
     // =========================
@@ -72,11 +113,16 @@ public class AdminStaffController {
     // =========================
 
     @DeleteMapping("/{id}")
-    public void deleteStaff(@PathVariable Long id) {
-        User staff = userService.getUserById(id);
+    public void deleteStaff(
+            @PathVariable Long id) {
+
+        User staff =
+                userService.getUserById(id);
 
         if (staff.getRole() != Role.STAFF) {
-            throw new RuntimeException("User is not staff");
+
+            throw new RuntimeException(
+                    "User is not staff");
         }
 
         userService.deleteUser(id);

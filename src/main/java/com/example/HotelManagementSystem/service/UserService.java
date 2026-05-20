@@ -28,25 +28,30 @@ public class UserService {
     private final JwtUtil jwtUtil;
 
     // =========================
-    // OTP Service
+    // OTP SERVICE
     // =========================
 
     private final OTPService otpService;
 
     // =========================
-    // BCrypt Password Encoder
+    // PASSWORD ENCODER
     // =========================
 
     private final BCryptPasswordEncoder passwordEncoder;
 
     // =========================
-    // Constructor Injection
+    // CONSTRUCTOR INJECTION
     // =========================
 
     public UserService(
+
             UserRepository userRepository,
+
             JwtUtil jwtUtil,
-            OTPService otpService) {
+
+            OTPService otpService
+
+    ) {
 
         this.userRepository = userRepository;
 
@@ -59,78 +64,116 @@ public class UserService {
     }
 
     // =========================
-    // CREATE USER
+    // CREATE CUSTOMER
     // =========================
 
-    public User createUser(UserRegistrationRequest request) {
+    public User createUser(
+            UserRegistrationRequest request) {
+
         return saveNewUser(
+
                 toUser(request),
+
                 Role.CUSTOMER
         );
     }
 
-    public User createStaff(UserCreateRequest request) {
+    // =========================
+    // CREATE STAFF
+    // =========================
+
+    public User createStaff(
+            UserCreateRequest request) {
+
         return saveNewUser(
+
                 toUser(request),
+
                 Role.STAFF
         );
     }
 
-    public User createAdmin(UserCreateRequest request) {
+    // =========================
+    // CREATE ADMIN
+    // =========================
+
+    public User createAdmin(
+            UserCreateRequest request) {
+
         return saveNewUser(
+
                 toUser(request),
+
                 Role.ADMIN
         );
     }
 
-    public User createUser(User user) {
-        return saveNewUser(user, Role.CUSTOMER);
-    }
+    // =========================
+    // CONVERT DTO TO USER
+    // =========================
 
-    public User createStaff(User user) {
-        return saveNewUser(user, Role.STAFF);
-    }
+    private User toUser(
+            UserRegistrationRequest request) {
 
-    public User createAdmin(User user) {
-        return saveNewUser(user, Role.ADMIN);
-    }
-
-    public List<User> getUsersByRole(Role role) {
-        return userRepository.findByRole(role);
-    }
-
-    private User toUser(UserRegistrationRequest request) {
         User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
-        user.setPhone(request.getPhone());
+
+        user.setUsername(
+                request.getUsername());
+
+        user.setEmail(
+                request.getEmail());
+
+        user.setPassword(
+                request.getPassword());
+
+        user.setPhone(
+                request.getPhone());
+
         return user;
     }
 
-    private User toUser(UserCreateRequest request) {
+    private User toUser(
+            UserCreateRequest request) {
+
         User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
-        user.setPhone(request.getPhone());
+
+        user.setUsername(
+                request.getUsername());
+
+        user.setEmail(
+                request.getEmail());
+
+        user.setPassword(
+                request.getPassword());
+
+        user.setPhone(
+                request.getPhone());
+
         return user;
     }
 
-    private User saveNewUser(User user, Role role) {
+    // =========================
+    // SAVE USER
+    // =========================
 
-        // Check Username Already Exists
+    private User saveNewUser(
+            User user,
+            Role role) {
+
+        // Username Exists
         userRepository.findByUsername(
                 user.getUsername())
+
                 .ifPresent(existingUser -> {
 
                     throw new RuntimeException(
                             "Username already exists");
                 });
 
-        // Check Email Already Exists
+        // Email Exists
         userRepository.findByEmail(
                 user.getEmail())
+
                 .ifPresent(existingUser -> {
 
                     throw new RuntimeException(
@@ -139,11 +182,12 @@ public class UserService {
 
         // Encrypt Password
         user.setPassword(
+
                 passwordEncoder.encode(
                         user.getPassword())
         );
 
-        // Force role assignment based on the operation
+        // Set Role
         user.setRole(role);
 
         return userRepository.save(user);
@@ -159,12 +203,38 @@ public class UserService {
     }
 
     // =========================
+    // GET USER BY ROLE
+    // =========================
+
+    public List<User> getUsersByRole(
+            Role role) {
+
+        return userRepository.findByRole(role);
+    }
+
+    // =========================
     // GET USER BY ID
     // =========================
 
     public User getUserById(Long id) {
 
         return userRepository.findById(id)
+
+                .orElseThrow(() ->
+
+                        new RuntimeException(
+                                "User not found"));
+    }
+
+    // =========================
+    // GET USER BY EMAIL
+    // =========================
+
+    public User getUserByEmail(
+            String email) {
+
+        return userRepository.findByEmail(email)
+
                 .orElseThrow(() ->
 
                         new RuntimeException(
@@ -194,15 +264,57 @@ public class UserService {
         existingUser.setRole(
                 user.getRole());
 
-        // Update Password Only If Provided
+        // Update password if provided
         if (user.getPassword() != null &&
                 !user.getPassword().isBlank()) {
 
             existingUser.setPassword(
 
                     passwordEncoder.encode(
-                            user.getPassword())
-            );
+                            user.getPassword()));
+        }
+
+        return userRepository.save(
+                existingUser);
+    }
+
+    // =========================
+    // UPDATE STAFF
+    // =========================
+
+    public User updateStaff(
+
+            Long id,
+
+            UserCreateRequest request) {
+
+        User existingUser =
+                getUserById(id);
+
+        // Ensure user is STAFF
+        if (existingUser.getRole() != Role.STAFF) {
+
+            throw new RuntimeException(
+                    "User is not staff");
+        }
+
+        existingUser.setUsername(
+                request.getUsername());
+
+        existingUser.setEmail(
+                request.getEmail());
+
+        existingUser.setPhone(
+                request.getPhone());
+
+        // Update password if provided
+        if (request.getPassword() != null &&
+                !request.getPassword().isBlank()) {
+
+            existingUser.setPassword(
+
+                    passwordEncoder.encode(
+                            request.getPassword()));
         }
 
         return userRepository.save(
@@ -226,10 +338,13 @@ public class UserService {
     // =========================
 
     public String loginUser(
+
             String username,
+
             String password) {
 
         User user =
+
                 userRepository.findByUsername(
                         username)
 
@@ -238,11 +353,13 @@ public class UserService {
                         new RuntimeException(
                                 "Invalid username"));
 
-        // Compare Encrypted Password
+        // Match Password
         boolean isPasswordMatch =
 
                 passwordEncoder.matches(
+
                         password,
+
                         user.getPassword());
 
         if (!isPasswordMatch) {
@@ -251,20 +368,23 @@ public class UserService {
                     "Invalid password");
         }
 
-        // Generate JWT Token
+        // Generate JWT
         return jwtUtil.generateToken(
                 user.getUsername());
     }
 
     // =========================
-    // VERIFY EMAIL WITH OTP
+    // VERIFY EMAIL OTP
     // =========================
 
     public void verifyEmailWithOTP(
+
             String email,
+
             String otpCode) {
 
         boolean isOTPValid =
+
                 otpService.verifyOTP(
                         email,
                         otpCode);
@@ -276,26 +396,17 @@ public class UserService {
         }
 
         User user =
-                userRepository.findByEmail(email)
+
+                userRepository.findByEmail(
+                        email)
+
                 .orElseThrow(() ->
 
                         new RuntimeException(
                                 "User not found"));
 
         user.setIsEmailVerified(true);
+
         userRepository.save(user);
-    }
-
-    // =========================
-    // GET USER BY EMAIL
-    // =========================
-
-    public User getUserByEmail(String email) {
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() ->
-
-                        new RuntimeException(
-                                "User not found"));
     }
 }
