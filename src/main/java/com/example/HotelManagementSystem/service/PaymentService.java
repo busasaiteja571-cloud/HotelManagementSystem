@@ -6,9 +6,13 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.example.HotelManagementSystem.dto.CashPaymentRequest;
 import com.example.HotelManagementSystem.entity.Booking;
 import com.example.HotelManagementSystem.entity.Payment;
+import com.example.HotelManagementSystem.entity.PaymentMethod;
 import com.example.HotelManagementSystem.entity.PaymentStatus;
+import com.example.HotelManagementSystem.entity.BookingStatus;
+import com.example.HotelManagementSystem.entity.RoomStatus;
 import com.example.HotelManagementSystem.repository.BookingRepository;
 import com.example.HotelManagementSystem.repository.PaymentRepository;
 import com.razorpay.Order;
@@ -147,6 +151,58 @@ public class PaymentService {
 
         return paymentRepository.save(
                 payment);
+    }
+
+    // =========================
+    // RECEPTION CASH PAYMENT
+    // =========================
+
+    public Payment receiveCashPayment(
+            Long bookingId,
+            CashPaymentRequest request) {
+
+        Booking booking = bookingRepository.findById(
+                bookingId)
+                .orElseThrow(() ->
+                        new RuntimeException("Booking not found"));
+
+        if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
+            throw new RuntimeException(
+                    "Cannot process cash payment for a cancelled booking");
+        }
+
+        if (booking.getRoom().getStatus() != RoomStatus.BOOKED) {
+            throw new RuntimeException(
+                    "Room is not currently booked for this payment");
+        }
+
+        Payment payment = paymentRepository
+                .findByBookingId(bookingId)
+                .orElse(new Payment());
+
+        payment.setBooking(booking);
+
+        double amount = request.getAmount() != null
+                && request.getAmount() > 0
+                ? request.getAmount()
+                : booking.getTotalPrice();
+
+        payment.setAmount(amount);
+        payment.setPaymentMethod(
+                PaymentMethod.CASH);
+        payment.setPaymentStatus(
+                PaymentStatus.SUCCESS);
+
+        String transactionId = request.getTransactionId();
+
+        if (transactionId == null || transactionId.isBlank()) {
+            transactionId = "CASH-" + bookingId + "-" +
+                    System.currentTimeMillis();
+        }
+
+        payment.setTransactionId(transactionId);
+
+        return paymentRepository.save(payment);
     }
 
     // =========================

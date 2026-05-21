@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.example.HotelManagementSystem.dto.ReceptionBookingRequest;
+import com.example.HotelManagementSystem.dto.ReceptionBookingResponse;
 import com.example.HotelManagementSystem.entity.Booking;
 import com.example.HotelManagementSystem.entity.BookingStatus;
 import com.example.HotelManagementSystem.entity.RoomStatus;
@@ -27,14 +29,18 @@ public class BookingService {
 
     private final UserRepository userRepository;
 
+    private final UserService userService;
+
     public BookingService(
             BookingRepository bookingRepository,
             RoomRepository roomRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            UserService userService) {
 
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
+        this.userService = userService;
     }
 
 
@@ -99,6 +105,89 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    // =========================
+    // CREATE BOOKING FROM RECEPTION
+    // =========================
+
+    public ReceptionBookingResponse createReceptionBooking(
+            ReceptionBookingRequest request) {
+
+        User user = userRepository
+                .findByUsername(
+                        request.getUser().getUsername())
+                .orElseGet(() ->
+                        userRepository
+                                .findByEmail(
+                                        request.getUser().getEmail())
+                                .orElse(null));
+
+        boolean accountCreated = false;
+        String rawPassword = null;
+
+        if (user == null) {
+            user = userService.createCustomer(
+                    request.getUser());
+            accountCreated = true;
+            rawPassword = request.getUser().getPassword();
+        }
+
+        Rooms room = roomRepository.findById(
+                request.getRoomId())
+                .orElseThrow(() ->
+                        new RuntimeException("Room not found"));
+
+        if (request.getCheckOut()
+                .isBefore(request.getCheckIn())) {
+
+            throw new RuntimeException(
+                    "Check-out date cannot be before check-in date");
+        }
+
+        boolean isBooked = bookingRepository
+                .existsByRoomAndCheckInLessThanEqualAndCheckOutGreaterThanEqual(
+                        room,
+                        request.getCheckOut(),
+                        request.getCheckIn());
+
+        if (isBooked) {
+            throw new RuntimeException("Room is already booked");
+        }
+
+        long days = request.getCheckIn()
+                .until(request.getCheckOut())
+                .getDays();
+
+        double totalPrice = days * room.getPrice();
+
+        Booking booking = new Booking();
+
+        booking.setUser(user);
+        booking.setRoom(room);
+        booking.setCheckIn(request.getCheckIn());
+        booking.setCheckOut(request.getCheckOut());
+        booking.setTotalPrice(totalPrice);
+        booking.setDiscountAmount(0.0);
+        booking.setFinalPrice(totalPrice);
+        booking.setBookingStatus(
+                BookingStatus.CONFIRMED);
+
+        room.setStatus(RoomStatus.BOOKED);
+
+        roomRepository.save(room);
+
+        Booking savedBooking = bookingRepository.save(booking);
+
+        String message = accountCreated
+                ? "Reception booking created and customer account created."
+                : "Reception booking created for existing user.";
+
+        return new ReceptionBookingResponse(
+                savedBooking.getId(),
+                user.getUsername(),
+                rawPassword,
+                message);
+    }
+
  
     // GET ALL BOOKINGS
  
@@ -137,6 +226,17 @@ public class BookingService {
                 booking.getBookingStatus());
 
         return bookingRepository.save(existingBooking);
+    }
+    //Booking status 
+    public Booking updateBookingStatus(
+            Long id,
+            BookingStatus bookingStatus) {
+
+        Booking booking = getBookingById(id);
+
+        booking.setBookingStatus(bookingStatus);
+
+        return bookingRepository.save(booking);
     }
 
 

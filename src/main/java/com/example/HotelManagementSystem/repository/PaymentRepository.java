@@ -19,6 +19,10 @@ public interface PaymentRepository
     boolean existsByTransactionId(
             String transactionId);
 
+    // Find Payment By Booking ID
+    Optional<Payment> findByBookingId(
+            Long bookingId);
+
     // Find Payments By Status
     List<Payment> findByPaymentStatus(
             PaymentStatus paymentStatus);

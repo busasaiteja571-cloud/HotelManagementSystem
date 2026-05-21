@@ -79,6 +79,21 @@ public class UserService {
     }
 
     // =========================
+    // CREATE CUSTOMER FROM RECEPTION
+    // =========================
+
+    public User createCustomer(
+            UserCreateRequest request) {
+
+        return saveNewUser(
+
+                toUser(request),
+
+                Role.CUSTOMER
+        );
+    }
+
+    // =========================
     // CREATE STAFF
     // =========================
 

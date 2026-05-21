@@ -125,6 +125,19 @@ public class RoomService {
                 existingRoom);
     }
 
+    public Rooms updateRoomStatus(
+            Long id,
+            RoomStatus status) {
+
+        Rooms existingRoom =
+                getRoomById(id);
+
+        existingRoom.setStatus(status);
+
+        return roomRepository.save(
+                existingRoom);
+    }
+
     // =========================
     // DELETE ROOM
     // =========================

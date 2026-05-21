@@ -62,6 +62,12 @@ public class SecurityConfig {
                     )
                     .hasRole("ADMIN")
 
+                    // Staff Routes
+                    .requestMatchers(
+                            "/api/staff/**"
+                    )
+                    .hasRole("STAFF")
+
                     // User Routes
                     .requestMatchers(
                             "/api/user/**"
