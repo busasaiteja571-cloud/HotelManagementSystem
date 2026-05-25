@@ -92,6 +92,11 @@ public class JwtUtil {
                 .before(new Date());
     }
 
+    public Date extractExpiration(String token) {
+        return extractAllClaims(token)
+                .getExpiration();
+    }
+
     // =========================
     // VALIDATE TOKEN
     // =========================

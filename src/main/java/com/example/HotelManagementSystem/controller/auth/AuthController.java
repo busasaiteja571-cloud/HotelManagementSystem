@@ -18,9 +18,11 @@ import com.example.HotelManagementSystem.dto.UserResponse;
 import com.example.HotelManagementSystem.entity.LoginRequest;
 import com.example.HotelManagementSystem.entity.OTPRequest;
 import com.example.HotelManagementSystem.entity.OTPVerificationRequest;
+import com.example.HotelManagementSystem.security.TokenBlacklistService;
 import com.example.HotelManagementSystem.service.OTPService;
 import com.example.HotelManagementSystem.service.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -37,11 +39,15 @@ public class AuthController {
 
     private final OTPService otpService;
 
+    private final TokenBlacklistService tokenBlacklistService;
+
     public AuthController(
             UserService userService,
-            OTPService otpService) {
+            OTPService otpService,
+            TokenBlacklistService tokenBlacklistService) {
         this.userService = userService;
         this.otpService = otpService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     // =========================
@@ -136,6 +142,35 @@ public class AuthController {
 
         response.put("message",
                 "Email verified successfully");
+
+        return ResponseEntity.ok(response);
+    }
+
+    // =========================
+    // LOGOUT USER
+    // =========================
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logoutUser(
+            HttpServletRequest request) {
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("timestamp", LocalDateTime.now());
+            response.put("status", 400);
+            response.put("message", "Authorization token is required for logout");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        String token = authHeader.substring(7);
+        tokenBlacklistService.revokeToken(token);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", 200);
+        response.put("message", "Logout successful");
 
         return ResponseEntity.ok(response);
     }

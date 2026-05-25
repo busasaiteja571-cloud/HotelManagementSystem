@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+
+import com.example.HotelManagementSystem.security.TokenBlacklistService;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -26,17 +28,21 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final UserDetailsService userDetailsService;
 
+    private final TokenBlacklistService tokenBlacklistService;
+
     // =========================
     // CONSTRUCTOR
     // =========================
 
     public JwtFilter(
             JwtUtil jwtUtil,
-            UserDetailsService userDetailsService
+            UserDetailsService userDetailsService,
+            TokenBlacklistService tokenBlacklistService
     ) {
 
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     // =========================
@@ -104,10 +110,11 @@ public class JwtFilter extends OncePerRequestFilter {
                     userDetailsService
                             .loadUserByUsername(username);
 
-            if (jwtUtil.validateToken(
-                    jwt,
-                    userDetails.getUsername()
-            )) {
+            if (!tokenBlacklistService.isTokenRevoked(jwt)
+                    && jwtUtil.validateToken(
+                            jwt,
+                            userDetails.getUsername()
+                    )) {
 
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
