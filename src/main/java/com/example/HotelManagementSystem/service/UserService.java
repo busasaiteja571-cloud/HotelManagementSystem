@@ -1,6 +1,8 @@
 package com.example.HotelManagementSystem.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -352,7 +354,7 @@ public class UserService {
     // LOGIN USER
     // =========================
 
-    public String loginUser(
+    public Map<String, Object> loginUser(
 
             String username,
 
@@ -384,8 +386,32 @@ public class UserService {
         }
 
         // Generate JWT
-        return jwtUtil.generateToken(
+        String token =
+
+                jwtUtil.generateToken(
+                        user.getUsername());
+
+        // Response Map
+        Map<String, Object> response =
+                new HashMap<>();
+
+        response.put(
+                "token",
+                token);
+
+        response.put(
+                "role",
+                user.getRole().name());
+
+        response.put(
+                "username",
                 user.getUsername());
+
+        response.put(
+                "message",
+                "Login successful");
+
+        return response;
     }
 
     // =========================

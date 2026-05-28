@@ -5,29 +5,27 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
 
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import org.springframework.security.web.authentication.
-UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.example.HotelManagementSystem.security.JwtFilter;
 
 @Configuration
 public class SecurityConfig {
 
-    // =========================
-    // JWT FILTER INJECTION
-    // =========================
-
     @Autowired
     private JwtFilter jwtFilter;
 
-    // =========================
-    // SECURITY FILTER CHAIN
-    // =========================
+    // ADD THIS
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -36,10 +34,8 @@ public class SecurityConfig {
 
         http
 
-            // Disable CSRF
             .csrf(csrf -> csrf.disable())
 
-            // Stateless Session
             .sessionManagement(session ->
 
                     session.sessionCreationPolicy(
@@ -47,28 +43,23 @@ public class SecurityConfig {
                     )
             )
 
-            // Authorization Rules
             .authorizeHttpRequests(auth -> auth
 
-                    // Public Routes
                     .requestMatchers(
                             "/api/auth/**"
                     )
                     .permitAll()
 
-                    // Admin Routes
                     .requestMatchers(
                             "/api/admin/**"
                     )
                     .hasRole("ADMIN")
 
-                    // Staff Routes
                     .requestMatchers(
                             "/api/staff/**"
                     )
                     .hasRole("STAFF")
 
-                    // User Routes
                     .requestMatchers(
                             "/api/user/**"
                     )
@@ -77,13 +68,10 @@ public class SecurityConfig {
                             "ADMIN"
                     )
 
-                    // Any Other Request
                     .anyRequest()
-
                     .authenticated()
             )
 
-            // Add JWT Filter
             .addFilterBefore(
                     jwtFilter,
                     UsernamePasswordAuthenticationFilter.class

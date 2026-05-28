@@ -45,6 +45,7 @@ public class AuthController {
             UserService userService,
             OTPService otpService,
             TokenBlacklistService tokenBlacklistService) {
+
         this.userService = userService;
         this.otpService = otpService;
         this.tokenBlacklistService = tokenBlacklistService;
@@ -75,22 +76,10 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> loginUser(
             @RequestBody LoginRequest request) {
 
-        String token = userService.loginUser(
-                request.getUsername(),
-                request.getPassword());
-
         Map<String, Object> response =
-                new HashMap<>();
-
-        response.put("timestamp",
-                LocalDateTime.now());
-
-        response.put("status", 200);
-
-        response.put("message",
-                "Login successful");
-
-        response.put("token", token);
+                userService.loginUser(
+                        request.getUsername(),
+                        request.getPassword());
 
         return ResponseEntity.ok(response);
     }
@@ -154,23 +143,44 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> logoutUser(
             HttpServletRequest request) {
 
-        String authHeader = request.getHeader("Authorization");
+        String authHeader =
+                request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("timestamp", LocalDateTime.now());
+        if (authHeader == null
+                || !authHeader.startsWith("Bearer ")) {
+
+            Map<String, Object> response =
+                    new HashMap<>();
+
+            response.put("timestamp",
+                    LocalDateTime.now());
+
             response.put("status", 400);
-            response.put("message", "Authorization token is required for logout");
-            return ResponseEntity.badRequest().body(response);
+
+            response.put("message",
+                    "Authorization token is required for logout");
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(response);
         }
 
-        String token = authHeader.substring(7);
-        tokenBlacklistService.revokeToken(token);
+        String token =
+                authHeader.substring(7);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
+        tokenBlacklistService
+                .revokeToken(token);
+
+        Map<String, Object> response =
+                new HashMap<>();
+
+        response.put("timestamp",
+                LocalDateTime.now());
+
         response.put("status", 200);
-        response.put("message", "Logout successful");
+
+        response.put("message",
+                "Logout successful");
 
         return ResponseEntity.ok(response);
     }
